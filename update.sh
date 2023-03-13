@@ -36,13 +36,34 @@ print_white() {
 }
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
-    echo 'Usage: ./update.sh
+    echo -e 'Usage: ./update.sh
+A script to update flipper files based on different sources
 
-This is an awesome bash script to make your life better.
+\t-h,--help\tDisplay this message
+\t-d,--debug\tRun this script with `set -x`
 
 '
     exit
 fi
+
+if [[ "${1-}" =~ ^-*d(ebug)?$ ]]; then
+    set -x
+fi
+
+copy() {
+    copy_to_officialFW ${1} ${2} ${@:3}
+    copy_to_customFW ${1} ${2} ${@:3}
+}
+
+copy_to_officialFW() {
+    print_green "Copying $1 to $2 in OFW"
+    rsync -a "${1}" "OFW/${2}" --exclude=.* --exclude=[Rr][Ee][Aa][Dd][Mm][Ee].[Mm][Dd] ${@:3}
+}
+
+copy_to_customFW() {
+    print_yellow "Copying $1 to $2 in CFW"
+    rsync -a "${1}" "CFW/${2}" --exclude=.* --exclude=[Rr][Ee][Aa][Dd][Mm][Ee].[Mm][Dd] ${@:3}    
+}
 
 check_directory() {
     print_red "Handling $1"
@@ -55,23 +76,37 @@ check_directory() {
     else
 	print_blue "$1 directory does not exist."
 	print_blue "Cloning $2 into $1"
-	git clone "$2" "$1" 1> /dev/null
+	git clone --recursive "$2" "$1" 1> /dev/null
     fi
 }
 
-handle_Flipper-IRDB() {
-    check_directory "Flipper-IRDB" "git@github.com:logickworkshop/Flipper-IRDB.git"
-    rsync -a Flipper-IRDB/ OFW/infrared --exclude=\_Converted\_ --exclude=README.md --exclude=.*
-    rsync -a Flipper-IRDB/ CFW/infrared --exclude=\_Converted\_ --exclude=README.md --exclude=.*
-}
-
-hangle_UberGuidoZ-Flipper() {
-    check_directory "UberGuidoZ-Flipper" "git@github.com:UberGuidoZ/Flipper.git"
+handle_UberGuidoZ-Flipper() {
+    DIR_NAME="UberGuidoZ-Flipper"
+    GIT_ADDR="git@github.com:UberGuidoZ/Flipper.git"
+    check_directory $DIR_NAME $GIT_ADDR
+    git -C $DIR_NAME submodule update --remote
+    copy $DIR_NAME/BadUSB/ badusb
+    copy $DIR_NAME/NFC/ nfc --exclude=Documentation/
+    copy_to_customFW $DIR_NAME/RFID/H10301\ Bruteforce/H10301_BF.zip lfrfid/rfidfuzzer
+    copy $DIR_NAME/Sub-GHz/ subghz --exclude=*.pdf --exclude=*.png
+    copy_to_customFW $DIR_NAME/subplaylist/ subplaylist
+    copy_to_customFW $DIR_NAME/unirf/ unirf
+    copy $DIR_NAME/Music_Player/ music_player
+    copy $DIR_NAME/Infrared/ infrared --exclude=_\Converted\_
+    copy_to_officialFW $DIR_NAME/Applications/Official/ apps
+    copy_to_customFW $DIR_NAME/Applications/Custom\ \(UL\,\ RM\,\ XFW\)/ apps --exclude=*.zip
+    # copy_to_customFW $DIR_NAME/Wav_Player/ wav_player # No wav player transfer due to size
 }
 
 main() {
-    handle_Flipper-IRDB
-    hangle_UberGuidoZ-Flipper
+    handle_UberGuidoZ-Flipper
+    git add OFW/ CFW/
+    git commit -m "Update $(date +"%d/%m/%Y")"
 }
 
 main "$@"
+
+#
+# OFW/{apps,badusb,infrared,music_player,nfc,subghz}
+# CFW/{apps,apps_data,badusb,dolphin,ibtnfuzzer,infrared,lfrfid/rfidfuzzer,music_player¸nfc,picopass,subghz,subplaylist,u2f,unirf,wav_player}
+# 
