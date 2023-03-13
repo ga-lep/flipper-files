@@ -16,8 +16,11 @@ Thanks to [Z3BRO](https://github.com/Z3BRO) for the idea and to [UberGuidoZ](htt
   2. If you use a custom firmware, make sure you have unzipped the archive located at `CFW/lfrfid/rfidfuzzer/H10301_BF.zip`
   2. Insert your Flipper's microSD card into your PC.
   3. Drag everything inside of the folder you opened to your Flipper's microSD card.
+	 
 	 /!\ In the apps folder, you must copy the files according to your firmware.
+		 
 		 Official firmware: DEV_FW or STABLE_FW
+		 
 		 Custom firmware: RogueMaster, Unleashed or Xtreme
   4. Eject the microSD card from your PC and slam it into your Flipper.
   5. Have fun :sunglasses:
