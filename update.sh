@@ -36,13 +36,13 @@ print_white() {
 }
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
-    echo -e 'Usage: ./update.sh
+    echo -e "Usage: ./update.sh
 A script to update flipper files based on different sources
 
 \t-h,--help\tDisplay this message
 \t-d,--debug\tRun this script with `set -x`
 
-'
+"
     exit
 fi
 
@@ -51,18 +51,18 @@ if [[ "${1-}" =~ ^-*d(ebug)?$ ]]; then
 fi
 
 copy() {
-    copy_to_officialFW ${1} ${2} ${@:3}
-    copy_to_customFW ${1} ${2} ${@:3}
+    copy_to_officialFW "${1}" "${2}" "${@:3}"
+    copy_to_customFW "${1}" "${2}" "${@:3}"
 }
 
 copy_to_officialFW() {
     print_green "Copying $1 to $2 in OFW"
-    rsync -a "${1}" "OFW/${2}" --exclude=.* --exclude=[Rr][Ee][Aa][Dd][Mm][Ee].[Mm][Dd] ${@:3}
+    rsync -a "${1}" "OFW/${2}" --exclude=.* "${@:3}"
 }
 
 copy_to_customFW() {
     print_yellow "Copying $1 to $2 in CFW"
-    rsync -a "${1}" "CFW/${2}" --exclude=.* --exclude=[Rr][Ee][Aa][Dd][Mm][Ee].[Mm][Dd] ${@:3}    
+    rsync -a "${1}" "CFW/${2}" --exclude=.* "${@:3}"
 }
 
 check_directory() {
@@ -80,28 +80,58 @@ check_directory() {
     fi
 }
 
+clean_directory() {
+    for ext in "${@:2}"
+    do
+        find "$1" -name "*.$ext" -type f -delete
+    done
+}
+
 handle_UberGuidoZ-Flipper() {
     DIR_NAME="UberGuidoZ-Flipper"
     GIT_ADDR="git@github.com:UberGuidoZ/Flipper.git"
     check_directory $DIR_NAME $GIT_ADDR
+    clean_directory $DIR_NAME 7z AppImage asciidoc c C16 complex16s css cu8 html jpeg jpg JPG js md mov mp4 pdf png PNG py pyc sh wav yaml yml zip
     git -C $DIR_NAME submodule update --remote
-    copy $DIR_NAME/BadUSB/ badusb
-    copy $DIR_NAME/NFC/ nfc --exclude=Documentation/
-    copy_to_customFW $DIR_NAME/RFID/H10301\ Bruteforce/H10301_BF.zip lfrfid/rfidfuzzer
-    copy $DIR_NAME/Sub-GHz/ subghz --exclude=*.pdf --exclude=*.png
-    copy_to_customFW $DIR_NAME/subplaylist/ subplaylist
-    copy_to_customFW $DIR_NAME/unirf/ unirf
-    copy $DIR_NAME/Music_Player/ music_player
-    copy $DIR_NAME/Infrared/ infrared --exclude=_\Converted\_
+    
+    # Clean specific
+    rm -rf UberGuidoZ-Flipper/Applications/Official/DEV_FW/source
+    rm -rf UberGuidoZ-Flipper/BadUSB/ # Removed because too many scripts, I have to sort
+
+    # apps
     copy_to_officialFW $DIR_NAME/Applications/Official/ apps
     copy_to_customFW $DIR_NAME/Applications/Custom\ \(UL\,\ RM\,\ XFW\)/ apps --exclude=*.zip
-    # copy_to_customFW $DIR_NAME/Wav_Player/ wav_player # No wav player transfer due to size
+
+    # badusb 
+    # Not yet sorted
+
+    # nfc
+    copy $DIR_NAME/NFC/ nfc --exclude=Documentation/ --exclude=Amiibo/Lanjelin-Converter/
+    
+    # rfid
+    # No data
+
+    # subghz
+    copy $DIR_NAME/Sub-GHz/ subghz --exclude=*.pdf --exclude=*.png
+
+    # subplaylist
+    copy_to_customFW $DIR_NAME/subplaylist/ subplaylist
+
+    # unirf
+    copy_to_customFW $DIR_NAME/unirf/ unirf
+
+    # infrared
+    copy $DIR_NAME/Infrared/ infrared --exclude=_\Converted\_
+    
+    # music_player
+    # No wav player transfer due to size
+    copy $DIR_NAME/Music_Player/ music_player
 }
 
 main() {
     handle_UberGuidoZ-Flipper
     git add OFW/ CFW/
-    git commit -m "Update $(date +"%d/%m/%Y")"
+    #git commit -m "Update $(date +"%d/%m/%Y")"
 }
 
 main "$@"
