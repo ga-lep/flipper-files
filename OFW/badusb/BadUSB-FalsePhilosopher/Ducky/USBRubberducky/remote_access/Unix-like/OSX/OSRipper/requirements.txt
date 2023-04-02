@@ -1,6 +1,0 @@
-Nuitka
-tinyaes
-pprintpp
-zstandard
-sandboxed
-pyinstaller
