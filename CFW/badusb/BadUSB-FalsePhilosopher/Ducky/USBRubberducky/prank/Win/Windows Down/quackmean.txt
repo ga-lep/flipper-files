@@ -1,5 +1,0 @@
-REM FalsePhilosopher
-REM WIP
-DELAY 300
-WINDOWS+m
-REM make a script and run it every 5 mins so you can unplug it
